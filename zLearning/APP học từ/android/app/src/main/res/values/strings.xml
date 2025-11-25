@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">zLearning</string>
+    <string name="title_activity_main">zLearning</string>
+    <string name="package_name">com.zlearning.app</string>
+    <string name="custom_url_scheme">com.zlearning.app</string>
+</resources>
