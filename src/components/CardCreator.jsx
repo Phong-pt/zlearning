@@ -40,12 +40,9 @@ function CardCreator() {
   const handleSearch = async () => {
     if (!inputWord.trim()) return;
 
-    if (wordExists(inputWord.trim(), selectedLanguage)) {
-      setMessage({ type: 'warning', text: 'Từ này đã có trong bộ sưu tập!' });
-      setTimeout(() => setMessage(null), 3000);
-      return;
-    }
-
+    // Don't block search if word exists - user might want to add different word types
+    // Check will happen when actually adding the card
+    
     setIsLoading(true);
     setPreviewCard(null);
     setAllMeanings([]);
@@ -155,6 +152,16 @@ function CardCreator() {
   const handleAddCard = () => {
     if (!editedCard) return;
 
+    // Check if this specific card (with exact word including suffix) already exists
+    if (wordExists(editedCard.word, editedCard.language)) {
+      setMessage({ 
+        type: 'warning', 
+        text: `Thẻ "${editedCard.word}" đã có trong bộ sưu tập!` 
+      });
+      setTimeout(() => setMessage(null), 3000);
+      return;
+    }
+
     addCard(editedCard);
     setMessage({ type: 'success', text: 'Đã thêm thẻ vào bộ sưu tập!' });
     
@@ -172,12 +179,14 @@ function CardCreator() {
     if (!previewCard || !allMeanings || allMeanings.length === 0) return;
 
     let addedCount = 0;
+    let skippedCount = 0;
+    const baseWord = previewCard.word.split(' (')[0]; // Get base word without suffix
     
     // Create a card for each word type
     allMeanings.forEach((meaning) => {
       const typeLabel = WORD_TYPE_COLORS[meaning.type]?.label || meaning.type;
       const cardData = {
-        word: `${previewCard.word} (${typeLabel.toLowerCase()})`,
+        word: `${baseWord} (${typeLabel.toLowerCase()})`,
         ipa: previewCard.ipa,
         type: meaning.type,
         meaning: meaning.meaningVi,
@@ -190,10 +199,17 @@ function CardCreator() {
       if (!wordExists(cardData.word, cardData.language)) {
         addCard(cardData);
         addedCount++;
+      } else {
+        skippedCount++;
       }
     });
 
-    if (addedCount > 0) {
+    if (addedCount > 0 && skippedCount > 0) {
+      setMessage({ 
+        type: 'success', 
+        text: `Đã thêm ${addedCount} thẻ mới! (Bỏ qua ${skippedCount} thẻ đã có)` 
+      });
+    } else if (addedCount > 0) {
       setMessage({ 
         type: 'success', 
         text: `Đã thêm ${addedCount} thẻ vào bộ sưu tập!` 
