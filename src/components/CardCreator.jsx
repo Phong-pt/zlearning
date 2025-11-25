@@ -62,8 +62,15 @@ function CardCreator() {
           setAllMeanings(result.allMeanings);
           
           const firstMeaning = result.allMeanings[0];
+          
+          // Add word type suffix if multiple meanings
+          const typeLabel = WORD_TYPE_COLORS[firstMeaning.type]?.label || firstMeaning.type;
+          const displayWord = result.allMeanings.length > 1
+            ? `${result.word} (${typeLabel.toLowerCase()})`
+            : result.word;
+          
           const cardData = {
-            word: result.word,
+            word: displayWord,
             ipa: result.ipa,
             type: firstMeaning.type,
             meaning: firstMeaning.meaningVi,
@@ -77,7 +84,7 @@ function CardCreator() {
           if (result.allMeanings.length > 1) {
             setMessage({ 
               type: 'success', 
-              text: `Tìm thấy ${result.allMeanings.length} loại từ khác nhau! Cuộn xuống để chọn.` 
+              text: `Tìm thấy ${result.allMeanings.length} loại từ! Bạn có thể thêm từng loại hoặc thêm tất cả.` 
             });
           } else {
             setMessage({ type: 'success', text: 'Đã tra cứu từ điển thành công!' });
@@ -118,8 +125,15 @@ function CardCreator() {
     setSelectedMeaningIndex(index);
     const selectedMeaning = allMeanings[index];
     
+    // Add word type suffix to word if multiple meanings exist
+    const baseWord = previewCard.word.split(' (')[0]; // Remove any existing suffix
+    const typeLabel = WORD_TYPE_COLORS[selectedMeaning.type]?.label || selectedMeaning.type;
+    const displayWord = allMeanings.length > 1 
+      ? `${baseWord} (${typeLabel.toLowerCase()})`
+      : baseWord;
+    
     const cardData = {
-      word: previewCard.word,
+      word: displayWord,
       ipa: previewCard.ipa,
       type: selectedMeaning.type,
       meaning: selectedMeaning.meaningVi,
@@ -143,6 +157,53 @@ function CardCreator() {
 
     addCard(editedCard);
     setMessage({ type: 'success', text: 'Đã thêm thẻ vào bộ sưu tập!' });
+    
+    setInputWord('');
+    setPreviewCard(null);
+    setEditedCard(null);
+    setAllMeanings([]);
+    setSelectedMeaningIndex(0);
+    setIsEditing(false);
+    
+    setTimeout(() => setMessage(null), 3000);
+  };
+
+  const handleAddAllCards = () => {
+    if (!previewCard || !allMeanings || allMeanings.length === 0) return;
+
+    let addedCount = 0;
+    
+    // Create a card for each word type
+    allMeanings.forEach((meaning) => {
+      const typeLabel = WORD_TYPE_COLORS[meaning.type]?.label || meaning.type;
+      const cardData = {
+        word: `${previewCard.word} (${typeLabel.toLowerCase()})`,
+        ipa: previewCard.ipa,
+        type: meaning.type,
+        meaning: meaning.meaningVi,
+        meaningEn: meaning.meaningEn,
+        example: meaning.example,
+        language: previewCard.language,
+      };
+      
+      // Check if this specific card already exists
+      if (!wordExists(cardData.word, cardData.language)) {
+        addCard(cardData);
+        addedCount++;
+      }
+    });
+
+    if (addedCount > 0) {
+      setMessage({ 
+        type: 'success', 
+        text: `Đã thêm ${addedCount} thẻ vào bộ sưu tập!` 
+      });
+    } else {
+      setMessage({ 
+        type: 'warning', 
+        text: 'Tất cả các thẻ này đã có trong bộ sưu tập!' 
+      });
+    }
     
     setInputWord('');
     setPreviewCard(null);
@@ -482,15 +543,27 @@ function CardCreator() {
                     />
                   </div>
 
-                  {/* Add button */}
-                  <button
-                    onClick={handleAddCard}
-                    disabled={!editedCard?.meaning}
-                    className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    <Plus className="w-5 h-5" />
-                    Thêm vào bộ sưu tập
-                  </button>
+                  {/* Add buttons */}
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleAddCard}
+                      disabled={!editedCard?.meaning}
+                      className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      <Plus className="w-5 h-5" />
+                      Thêm thẻ này
+                    </button>
+                    
+                    {allMeanings.length > 1 && (
+                      <button
+                        onClick={handleAddAllCards}
+                        className="w-full px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+                      >
+                        <Sparkles className="w-5 h-5" />
+                        Thêm tất cả {allMeanings.length} loại từ
+                      </button>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             )}
